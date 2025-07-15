@@ -1,0 +1,95 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    color: #ffffff;
+    background: url('../images/background-feedback.jpg') no-repeat center center fixed;
+background-size: cover;
+
+  
+}
+html, body {
+    height: 100%;
+}
+
+
+.navbar {
+    background-color: rgba(6, 6, 41, 0.4);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.navbar .nav-links a {
+    color: white;
+    margin-left: 20px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.navbar .nav-links a:hover {
+    text-decoration: underline;
+}
+
+.feedback-container {
+    max-width: 600px;
+    margin: 60px auto;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.feedback-container h2 {
+    margin-bottom: 10px;
+    color: #334174;
+}
+
+.feedback-container p {
+    margin-bottom: 30px;
+    color: #2e3074;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+    color: #7067a2;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border: 2px solid #00bfff;
+}
+
+button[type="submit"] {
+    padding: 12px 30px;
+    background-color: #211860;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    background-color: #009acd;
+}

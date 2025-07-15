@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Mood Detector</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body class="index-body">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Mood Mapper</h2>
+            <span class="close-btn" onclick="toggleSidebar()">×</span>
+        </div>
+        <ul>
+            <li><a href="{{ url_for('main.history') }}">History</a></li>
+            <li><a href="{{ url_for('main.user_details') }}">User Details</a></li>
+            <li><a href="{{ url_for('main.logout') }}">Logout</a></li>
+
+        </ul>
+    </div>
+
+    <!-- Hamburger icon -->
+    <div class="hamburger" onclick="toggleSidebar()">☰</div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="center-content">
+            <h1>Welcome to <span class="highlight">AI Mood Detector</span></h1>
+         <form action="{{ url_for('main.start_combined_detect') }}" method="GET" style="margin-top: 20px;">
+    <button type="submit" class="mood-button" style="font-size: 22px; padding: 15px 30px;">Let's decode your mood</button>
+
+</form>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <h3 style="color: #2ecc71;">{{ message }}</h3>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
+        </div>
+<div class="info-section">
+    <div class="info-card">
+        <a href="{{ url_for('main.how_it_works') }}">
+            <img src="{{ url_for('static', filename='images/how_emotion_work.png') }}" alt="How Mood Detection Works">
+        </a>
+        <h3>How Mood Detection Works</h3>
+        <p>Using facial expressions and voice tone, our AI models assess emotions in real time.</p>
+    </div>
+
+    <div class="info-card">
+        <a href="{{ url_for('main.real_time_emotion') }}">
+            <img src="{{ url_for('static', filename='images/Real-Time_Emotion.png') }}" alt="Real-time Emotion Insight">
+        </a>
+        <h3>Real-time Emotion Insight</h3>
+        <p>Our system detects emotions instantly to help in improving communication and mental wellness.</p>
+    </div>
+
+    <div class="info-card">
+        <a href="{{ url_for('main.why_it_matters') }}">
+            <img src="{{ url_for('static', filename='images/importance.jpg') }}" alt="Why It Matters">
+        </a>
+        <h3>Why It Matters</h3>
+        <p>In a fast-paced world, understanding emotions fosters better relationships and well-being.</p>
+    </div>
+</div>
+
+
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

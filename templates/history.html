@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mood History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url("../static/images/bg.jpg") no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+        }
+
+        .container {
+            margin: 50px auto;
+            width: 90%;
+            max-width: 800px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            color: black;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #fff;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Your Mood History</h1>
+
+        {% if history %}
+            <table>
+                <tr>
+                    <th>Mood</th>
+                    <th>Date & Time</th>
+                </tr>
+                {% for entry in history %}
+                <tr>
+                    <td>{{ entry.mood }}</td>
+                    <td>{{ entry.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p style="text-align:center;">No mood data available yet.</p>
+        {% endif %}
+
+        <a class="back-btn" href="{{ url_for('main.index') }}">← Back to Dashboard</a>
+    </div>
+</body>
+</html>
+

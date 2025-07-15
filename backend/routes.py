@@ -1,0 +1,321 @@
+from backend.mood_detector import detect_mood
+
+from backend.combined_detector import predict_combined_emotion
+from flask import Blueprint, send_file, render_template, request, redirect, session, flash
+from flask import redirect,url_for
+import threading
+from werkzeug.security import generate_password_hash, check_password_hash
+from backend.db import get_connection
+from datetime import datetime
+
+main = Blueprint('main', __name__)
+
+
+@main.route('/')
+def root():
+    return render_template('home.html')
+
+
+
+
+
+
+
+
+@main.route('/index')
+def index():
+    if 'user_id' not in session:
+        flash('Please log in to access this page.', 'warning')
+        return redirect(url_for('main.login'))
+    return render_template('index.html')
+
+
+
+
+
+
+
+
+@main.route('/start-combined-detect')
+def start_combined_detect():
+    if 'user_id' not in session:
+        flash('Please log in to detect mood.', 'warning')
+        return redirect(url_for('main.login'))
+
+    print("👉 Mood detection started directly")
+    mood_result = predict_combined_emotion()  # no threading
+    print("✅ Mood detected:", mood_result)
+
+    flash(f"Mood detection result: {mood_result}", "success")
+    return redirect(url_for('main.index'))
+
+
+@main.route('/home')
+def home():
+    if 'user_id' not in session:
+        flash('Please log in to access this page.', 'warning')
+        return redirect(url_for('main.login'))
+    return render_template('home.html')
+
+
+# Register Page
+@main.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not username or not email or not password or not confirm_password:
+            flash('All fields are required!', 'danger')
+        elif password != confirm_password:
+            flash('Passwords do not match!', 'danger')
+        else:
+            conn = get_connection()
+            try:
+                with conn.cursor() as cursor:
+                    hashed_pw = generate_password_hash(password)
+                    cursor.execute(
+                        'INSERT INTO users (username, email, password) VALUES (%s, %s, %s)',
+                        (username, email, hashed_pw)
+                    )
+                conn.commit()
+                flash('Registration successful!', 'success')
+                return redirect('/login')
+            except Exception as e:
+                flash(f'Error: {str(e)}', 'danger')
+            finally:
+                conn.close()
+
+    return render_template('register.html')
+
+# Login Page
+@main.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        conn = get_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
+                user = cursor.fetchone()
+
+            if user and check_password_hash(user['password'], password):
+                session['user_id'] = user['id']
+                session['username'] = user['username']
+                flash('Login successful!', 'success')
+                return redirect(url_for('main.index')) 
+            else:
+                flash('Invalid credentials!', 'danger')
+        finally:
+            conn.close()
+
+    return render_template('login.html')
+
+
+
+@main.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        # Add logic to send reset link or show a message
+        flash('Password reset instructions have been sent to your email.')
+        return redirect(url_for('main.login'))
+    return render_template('forgot_password.html')
+
+
+# Route: Try the Demo (no login, no saving)
+@main.route('/demo-detect')
+def demo_detect():
+    detect_mood()  # This just runs and returns after window closes
+    flash('Demo complete. Thanks for trying!', 'info')
+    return redirect(url_for('main.root'))
+
+# Route: Logged-in user detection (saves to DB)
+@main.route('/detect')
+def detect():
+    if 'user_id' not in session:
+        flash('Please log in to use mood detection.', 'warning')
+        return redirect(url_for('main.root'))
+
+    def threaded_detection(user_id):
+        mood = detect_mood()
+        conn = get_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (%s, %s, %s)',
+                    (user_id, mood, datetime.now())
+                )
+            conn.commit()
+        finally:
+            conn.close()
+
+
+    # Start detection in a separate thread
+    detection_thread = threading.Thread(target=threaded_detection, args=(session['user_id'],))
+    detection_thread.start()
+
+    flash('Mood detection started. Check back after it completes.', 'info')
+    return redirect(url_for('main.index'))
+
+@main.route('/start_demo_detection')
+def start_demo_detection():
+    # Start detection in a new thread
+    detection_thread = threading.Thread(target=detect_mood)
+    detection_thread.start()
+
+    # Return a response to the user right away
+    return redirect(url_for('main.index'))  # or any page with a message
+
+
+@main.route('/start_user_detection')
+def start_user_detection():
+    detection_thread = threading.Thread(target=detect_mood)
+    detection_thread.start()
+
+    return redirect(url_for('main.index'))  # or wherever you want the user to go
+
+@main.route('/send_message', methods=['POST'])
+def send_message():
+    name = request.form['name']
+    email = request.form['email']
+    message = request.form['message']
+    # Process/store the message
+    flash('Message sent successfully!', 'success')
+    return redirect(url_for('main.contact'))
+
+
+
+@main.route('/about')
+def about():
+    return render_template('about.html')
+
+@main.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+@main.route('/feedback', methods=['GET'])
+def feedback():
+    return render_template('feedback.html')
+
+@main.route('/submit_feedback', methods=['POST'])
+def submit_feedback():
+    # process feedback logic here (e.g., save to DB or send email)
+    name = request.form['name']
+    email = request.form['email']
+    message = request.form['message']
+    # Store or log this data
+    flash('Thank you for your feedback!', 'success')
+    return redirect(url_for('main.feedback'))
+
+
+@main.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('main.root'))  # instead of main.login
+
+
+@main.route('/user-details')
+def user_details():
+    if 'user_id' not in session:
+        flash('Please log in first.', 'warning')
+        return redirect(url_for('main.login'))
+
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('SELECT username, email FROM users WHERE id = %s', (session['user_id'],))
+            user = cursor.fetchone()
+    finally:
+        conn.close()
+
+    return render_template('user_details.html', user=user)
+
+
+@main.route('/change-password', methods=['POST'])
+def change_password():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    old_password = request.form['old_password']
+    new_password = request.form['new_password']
+
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('SELECT password FROM users WHERE id = %s', (session['user_id'],))
+            user = cursor.fetchone()
+            if user and check_password_hash(user['password'], old_password):
+                hashed_new = generate_password_hash(new_password)
+                cursor.execute('UPDATE users SET password = %s WHERE id = %s', (hashed_new, session['user_id']))
+                conn.commit()
+                flash('Password changed successfully!', 'success')
+            else:
+                flash('Old password incorrect.', 'danger')
+    finally:
+        conn.close()
+
+    return redirect(url_for('main.user_details'))
+
+
+@main.route('/update-profile', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    new_username = request.form['username']
+    new_email = request.form['email']
+
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('UPDATE users SET username = %s, email = %s WHERE id = %s',
+                           (new_username, new_email, session['user_id']))
+            conn.commit()
+            session['username'] = new_username
+            flash('Profile updated!', 'success')
+    finally:
+        conn.close()
+
+    return redirect(url_for('main.user_details'))
+
+
+
+@main.route('/history')
+def history():
+    if 'user_id' not in session:
+        flash('Please log in to view your mood history.', 'warning')
+        return redirect(url_for('main.login'))
+
+    # ✅ ADD THIS LINE
+    print("👉 Logged-in User ID:", session['user_id'])
+
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                'SELECT mood, timestamp FROM mood_history WHERE user_id = %s ORDER BY timestamp DESC',
+                (session['user_id'],)
+            )
+            history = cursor.fetchall()
+    finally:
+        conn.close()
+
+    return render_template('history.html', history=history)
+
+
+@main.route('/how-it-works')
+def how_it_works():
+    return render_template('how_it_works.html')
+
+@main.route('/real-time-emotion')
+def real_time_emotion():
+    return render_template('real_time_emotion.html')
+
+@main.route('/why-it-matters')
+def why_it_matters():
+    return render_template('why_it_matters.html')

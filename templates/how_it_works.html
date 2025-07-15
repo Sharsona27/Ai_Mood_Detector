@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>How Mood Detection Works</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="index-body">
+    <div class="page-content">
+        <h1>How Mood Detection Works</h1>
+        <img src="{{ url_for('static', filename='images/how_emotion_work.png') }}" alt="How It Works" class="full-width-img">
+        <p>We use DeepFace and a custom CNN model trained on facial expressions to analyze emotions in real time using a webcam. The face is detected using MediaPipe, preprocessed, and passed through AI models for emotion classification.</p>
+        <a href="{{ url_for('main.index') }}" class="back-btn">← Back to Home</a>
+    </div>
+</body>
+</html>

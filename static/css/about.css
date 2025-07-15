@@ -1,0 +1,89 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: url('../images/background-about.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: white;
+}
+
+.navbar {
+    background-color: rgba(44, 44, 45, 0.8); /* Transparent navy blue */
+    padding: 10px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.navbar .nav-links a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: white;
+    font-weight: 500;
+}
+
+.navbar .nav-links a:hover {
+    text-decoration: underline;
+}
+
+.about-container {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.about-container h1 {
+    text-align: center;
+    color: #01394c;
+    margin-bottom: 40px;
+}
+
+.about-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    background-color: rgba(3, 1, 24, 0.5); /* Transparent navy blue */
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    gap: 30px;
+}
+
+.about-text {
+    flex: 1;
+}
+
+.about-text h3 {
+    color: #0a4052;
+    margin-bottom: 15px;
+}
+
+.about-text p, .about-text ul {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.about-text ul {
+    padding-left: 20px;
+    margin-top: 10px;
+}
+
+.about-img {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.about-img img {
+    width: 100%;
+    max-width: 350px;
+    height: 230px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+
+.highlight {
+    color: #1b4655;
+    font-weight: bold;
+}

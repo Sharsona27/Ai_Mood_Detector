@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Contact Us - AI Mood Detector</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/contact.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<header class="navbar">
+    <div class="logo">AI MOOD DETECTOR</div>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('main.home') }}">Home</a></li>
+            <li><a href="{{ url_for('main.about') }}">About Us</a></li>
+            <li><a href="{{ url_for('main.register') }}">Register</a></li>
+            <li><a href="{{ url_for('main.login') }}">Sign In</a></li>
+        </ul>
+    </nav>
+</header>
+
+<section class="contact-container">
+    <h1>Contact Us</h1>
+    <p class="subtitle">We’d love to hear from you! Please reach out with any questions, feedback, or inquiries.</p>
+
+    <div class="contact-content">
+        <form class="contact-form" method="POST" action="{{ url_for('main.send_message') }}">
+            <input type="text" name="name" placeholder="Your Name" required>
+            <input type="email" name="email" placeholder="Your Email" required>
+            <textarea name="message" rows="6" placeholder="Your Message" required></textarea>
+            <button type="submit">Send Message</button>
+        </form>
+
+        <div class="contact-info">
+            <h3>Reach Us At</h3>
+            <p>Email: support@aimooddetector.com</p>
+            <p>Phone: +1 234 567 8900</p>
+            <p>Location: 123 AI Street, Tech City, Innovationland</p>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+           
+            background-size: cover;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            margin: 60px auto;
+            backdrop-filter: blur(10px);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        h2, h3 {
+            color: #00ffff;
+            margin-bottom: 15px;
+        }
+
+        h2 i, h3 i {
+            margin-right: 8px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        input::placeholder {
+            color: #eee;
+        }
+
+        button {
+            width: 100%;
+            background-color: #00ffff;
+            color: #000;
+            padding: 10px;
+            border: none;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #00dddd;
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2><i class="fas fa-user-circle"></i> Welcome, {{ user.username }}</h2>
+        <p>Email: {{ user.email }}</p>
+
+        <div class="section">
+            <h3><i class="fas fa-lock"></i> Change Password</h3>
+            <form method="POST" action="{{ url_for('main.change_password') }}">
+                <input type="password" name="old_password" placeholder="Old Password" required>
+                <input type="password" name="new_password" placeholder="New Password" required>
+                <button type="submit">Update Password</button>
+            </form>
+        </div>
+
+        <div class="section">
+            <h3><i class="fas fa-edit"></i> Update Profile</h3>
+            <form method="POST" action="{{ url_for('main.update_profile') }}">
+                <input type="text" name="username" value="{{ user.username }}" required>
+                <input type="email" name="email" value="{{ user.email }}" required>
+                <button type="submit">Update Info</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Font Awesome (CDN for icons) -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+</body>
+</html>
