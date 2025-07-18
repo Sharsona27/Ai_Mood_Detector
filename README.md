@@ -55,3 +55,6 @@ pip install -r requirements.txt
 
 # 5. Run the app
 python app.py
+
+# MIT License © 2025 Sonal Sharma
+Feel free to use, modify, and distribute this software with attribution.
