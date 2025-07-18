@@ -40,8 +40,8 @@ The **AI Mood Detector** is a full-stack web application that uses AI to detect 
 ### 🔧 Installation
 
 # 1. Clone the repository
-git clone https://github.com/YourUsername/AI-Mood-Detector.git
-cd AI-Mood-Detector
+git clone https://github.com/Sharsona27/AI_Mood_Detector.git
+cd AI_Mood_Detector
 
 # 2. Create and activate a virtual environment
 python -m venv venv
