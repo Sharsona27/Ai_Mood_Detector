@@ -7,12 +7,39 @@ from collections import Counter
 from deepface import DeepFace
 import base64
 import os
+import traceback
+from pathlib import Path
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-# Load your custom-trained model
-custom_model = load_model("models/custom_emotion_model.h5")
+# Lazy-load custom model to avoid import-time failures on Render
+custom_model = None
 custom_labels = ['bored', 'contempt', 'disgust', 'fear', 'joy', 'surprise', 'upset']
+model_loaded = False
+
+
+def load_custom_model():
+    global custom_model, model_loaded
+    if model_loaded:
+        return
+    try:
+        base = Path(__file__).resolve().parents[1]
+        model_path = base / 'models' / 'custom_emotion_model.h5'
+        print(f"Checking custom model at: {model_path}")
+        if not model_path.exists():
+            print("Custom model file not found:", model_path)
+            model_loaded = True
+            custom_model = None
+            return
+        print("Loading custom model...")
+        custom_model = load_model(str(model_path))
+        model_loaded = True
+        print("Custom model loaded")
+    except Exception as e:
+        print("Failed to load custom model:", e)
+        traceback.print_exc()
+        custom_model = None
+        model_loaded = True
 
 
 def get_face_detector():
@@ -34,6 +61,7 @@ def detect_combined_emotion_from_image(image_data):
         dict with keys: emotion, confidence, custom_emotion, deepface_emotion
     """
     try:
+        print("detect_combined_emotion_from_image called")
         # Convert base64 to numpy array if needed
         if isinstance(image_data, str):
             image_data = base64.b64decode(image_data)
@@ -41,17 +69,19 @@ def detect_combined_emotion_from_image(image_data):
             frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
         else:
             frame = image_data
-        
+        print("Image decoded?", frame is not None)
         if frame is None:
-            return {'emotion': 'Unknown', 'confidence': 0, 'error': 'Could not decode image'}
+            print("Frame is None after decoding")
+            return {'success': False, 'error': 'Could not decode image', 'emotion': 'Unknown'}
         
         # Convert to RGB for face detection
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         face_detection = get_face_detector()
         results = face_detection.process(rgb_frame)
-        
+        print("Face detection results:", results)
         if not results.detections:
-            return {'emotion': 'Unknown', 'confidence': 0, 'error': 'No face detected'}
+            print("No face detected")
+            return {'success': False, 'error': 'No face detected', 'emotion': 'Unknown'}
         
         # Process the first detected face
         detection = results.detections[0]
@@ -77,21 +107,28 @@ def detect_combined_emotion_from_image(image_data):
         deep_label = 'Unknown'
         
         try:
+            load_custom_model()
+            print("Custom model available?", custom_model is not None)
             # --- Custom Model Prediction ---
-            custom_face = cv2.resize(face_roi, (224, 224))
-            custom_face = custom_face.astype("float32") / 255.0
-            custom_face = img_to_array(custom_face)
-            custom_face = np.expand_dims(custom_face, axis=0)
-            
-            preds = custom_model.predict(custom_face, verbose=0)
-            custom_label = custom_labels[np.argmax(preds)]
-            custom_confidence = float(np.max(preds))
+            if custom_model is not None:
+                custom_face = cv2.resize(face_roi, (224, 224))
+                custom_face = custom_face.astype("float32") / 255.0
+                custom_face = img_to_array(custom_face)
+                custom_face = np.expand_dims(custom_face, axis=0)
+                preds = custom_model.predict(custom_face, verbose=0)
+                custom_label = custom_labels[np.argmax(preds)]
+                custom_confidence = float(np.max(preds))
+            else:
+                print("Skipping custom model prediction because model is not loaded")
+                custom_confidence = 0
         except Exception as e:
             print(f"Custom model error: {e}")
+            traceback.print_exc()
             custom_confidence = 0
         
         try:
             # --- DeepFace Prediction ---
+            print("Starting DeepFace.analyze()")
             deep_result = DeepFace.analyze(face_roi, actions=['emotion'], enforce_detection=False)
             if isinstance(deep_result, list):
                 deep_result = deep_result[0]
@@ -100,6 +137,7 @@ def detect_combined_emotion_from_image(image_data):
             deep_confidence = deep_emotions.get(deep_label, 0)
         except Exception as e:
             print(f"DeepFace error: {e}")
+            traceback.print_exc()
             deep_confidence = 0
         
         # --- Consensus or Fallback Logic ---
@@ -111,7 +149,9 @@ def detect_combined_emotion_from_image(image_data):
             final_mood = f"{custom_label} / {deep_label}"
             confidence = (custom_confidence + deep_confidence) / 2
         
+        print("Prediction complete")
         return {
+            'success': True,
             'emotion': final_mood,
             'confidence': round(confidence, 2),
             'custom_emotion': custom_label,
@@ -121,7 +161,9 @@ def detect_combined_emotion_from_image(image_data):
         }
     
     except Exception as e:
-        return {'emotion': 'Unknown', 'confidence': 0, 'error': str(e)}
+        print("Unhandled exception in detect_combined_emotion_from_image:", e)
+        traceback.print_exc()
+        return {'success': False, 'emotion': 'Unknown', 'confidence': 0, 'error': str(e)}
 
 
 def predict_combined_emotion():

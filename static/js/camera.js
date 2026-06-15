@@ -107,19 +107,33 @@ async function captureAndDetect() {
             })
         });
         
-        const result = await response.json();
-        
+        // Determine if response is JSON
+        const contentType = response.headers.get('content-type') || '';
+        let result = null;
+        if (contentType.includes('application/json')) {
+            result = await response.json();
+        } else {
+            // fallback: read raw text and log for debugging
+            const text = await response.text();
+            console.error('Non-JSON response from server:', text);
+            hideLoading();
+            captureBtn.disabled = false;
+            showError('Server returned non-JSON response. See console for details.');
+            return;
+        }
+
         // Hide loading indicator
         hideLoading();
-        
+
         // Re-enable capture button
         captureBtn.disabled = false;
-        
-        if (response.ok) {
+
+        if (response.ok && result && result.success !== false) {
             // Display the detected emotion
             displayResult(result);
         } else {
-            showError(result.error || 'Failed to detect emotion. Please try again.');
+            const err = (result && (result.error || result.message)) || 'Failed to detect emotion. Please try again.';
+            showError(err);
         }
         
     } catch (error) {

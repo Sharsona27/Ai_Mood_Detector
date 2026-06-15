@@ -6,6 +6,7 @@ from flask import redirect,url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from backend.db import get_connection
 from datetime import datetime
+import traceback
 
 main = Blueprint('main', __name__)
 
@@ -22,34 +23,50 @@ def api_detect_mood():
         return jsonify({'error': 'User not authenticated'}), 401
     
     try:
+        print("/api/detect-mood called")
         data = request.get_json()
         if not data or 'image' not in data:
-            return jsonify({'error': 'No image data provided'}), 400
-        
+            return jsonify({'success': False, 'error': 'No image data provided'}), 400
+
         image_data = data['image']
-        
+        print("Image received (base64 length):", len(image_data) if isinstance(image_data, str) else 'binary')
+
         # Detect mood from image
         result = detect_mood_from_image(image_data)
-        
+        print("Detector result:", result)
+
         # Save to database if mood was detected successfully
-        if result.get('emotion') != 'Unknown':
-            conn = get_connection()
-            try:
-                cursor = conn.cursor()
-                cursor.execute(
-                    'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (?, ?, ?)',
-                    (session['user_id'], result['emotion'], datetime.now())
-                )
-                conn.commit()
-            except Exception as e:
-                print(f"Database error: {e}")
-            finally:
-                conn.close()
-        
-        return jsonify(result), 200
-    
+        try:
+            if result.get('success') and result.get('emotion') and result.get('emotion') != 'Unknown':
+                conn = get_connection()
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (?, ?, ?)',
+                        (session['user_id'], result['emotion'], datetime.now())
+                    )
+                    conn.commit()
+                except Exception as e:
+                    print(f"Database error: {e}")
+                    traceback.print_exc()
+                finally:
+                    try:
+                        conn.close()
+                    except:
+                        pass
+        except Exception:
+            # don't let DB logging break the response
+            traceback.print_exc()
+
+        # Ensure JSON response
+        if isinstance(result, dict):
+            return jsonify(result), 200 if result.get('success', True) else 500
+        else:
+            return jsonify({'success': False, 'error': 'Invalid detector response'}), 500
     except Exception as e:
-        return jsonify({'error': str(e), 'emotion': 'Unknown'}), 500
+        print("Unhandled exception in /api/detect-mood:", e)
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @main.route('/api/detect-combined-emotion', methods=['POST'])
@@ -62,34 +79,48 @@ def api_detect_combined_emotion():
         return jsonify({'error': 'User not authenticated'}), 401
     
     try:
+        print("/api/detect-combined-emotion called")
         data = request.get_json()
         if not data or 'image' not in data:
-            return jsonify({'error': 'No image data provided'}), 400
-        
+            return jsonify({'success': False, 'error': 'No image data provided'}), 400
+
         image_data = data['image']
-        
+        print("Image received (combined) length:", len(image_data) if isinstance(image_data, str) else 'binary')
+
         # Detect combined emotion from image
         result = detect_combined_emotion_from_image(image_data)
-        
+        print("Combined detector result:", result)
+
         # Save to database if emotion was detected successfully
-        if result.get('emotion') != 'Unknown':
-            conn = get_connection()
-            try:
-                cursor = conn.cursor()
-                cursor.execute(
-                    'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (?, ?, ?)',
-                    (session['user_id'], result['emotion'], datetime.now())
-                )
-                conn.commit()
-            except Exception as e:
-                print(f"Database error: {e}")
-            finally:
-                conn.close()
-        
-        return jsonify(result), 200
-    
+        try:
+            if result.get('success') and result.get('emotion') and result.get('emotion') != 'Unknown':
+                conn = get_connection()
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (?, ?, ?)',
+                        (session['user_id'], result['emotion'], datetime.now())
+                    )
+                    conn.commit()
+                except Exception as e:
+                    print(f"Database error: {e}")
+                    traceback.print_exc()
+                finally:
+                    try:
+                        conn.close()
+                    except:
+                        pass
+        except Exception:
+            traceback.print_exc()
+
+        if isinstance(result, dict):
+            return jsonify(result), 200 if result.get('success', True) else 500
+        else:
+            return jsonify({'success': False, 'error': 'Invalid detector response'}), 500
     except Exception as e:
-        return jsonify({'error': str(e), 'emotion': 'Unknown'}), 500
+        print("Unhandled exception in /api/detect-combined-emotion:", e)
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # ============= EXISTING ROUTES =============

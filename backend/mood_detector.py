@@ -5,6 +5,7 @@ import numpy as np
 import mediapipe as mp
 from deepface import DeepFace
 import os
+import traceback
 from collections import Counter
 import base64
 
@@ -30,6 +31,7 @@ def detect_mood_from_image(image_data):
         dict with keys: emotion, confidence (if available)
     """
     try:
+        print("detect_mood_from_image called")
         # Convert base64 to numpy array if needed
         if isinstance(image_data, str):
             image_data = base64.b64decode(image_data)
@@ -37,18 +39,21 @@ def detect_mood_from_image(image_data):
             frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
         else:
             frame = image_data
-        
+
+        print("Image decoded?", frame is not None)
         if frame is None:
-            return {'emotion': 'Unknown', 'confidence': 0, 'error': 'Could not decode image'}
-        
+            print("Frame None after base64 decode")
+            return {'success': False, 'emotion': 'Unknown', 'confidence': 0, 'error': 'Could not decode image'}
+
         # Convert to RGB for face detection
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         face_detection = get_face_detector()
         results = face_detection.process(rgb_frame)
-        
+
         if not results.detections:
-            return {'emotion': 'Unknown', 'confidence': 0, 'error': 'No face detected'}
-        
+            print("No face detected")
+            return {'success': False, 'emotion': 'Unknown', 'confidence': 0, 'error': 'No face detected'}
+
         # Process the first detected face
         detection = results.detections[0]
         bboxC = detection.location_data.relative_bounding_box
@@ -57,38 +62,45 @@ def detect_mood_from_image(image_data):
         y = int(bboxC.ymin * ih)
         w = int(bboxC.width * iw)
         h = int(bboxC.height * ih)
-        
+
         # Ensure valid coordinates
         x = max(0, x)
         y = max(0, y)
         w = min(w, iw - x)
         h = min(h, ih - y)
-        
+
         face_roi = frame[y:y + h, x:x + w]
-        
+
         if face_roi.size == 0:
-            return {'emotion': 'Unknown', 'confidence': 0, 'error': 'Invalid face region'}
-        
+            print("Invalid face region")
+            return {'success': False, 'emotion': 'Unknown', 'confidence': 0, 'error': 'Invalid face region'}
+
         # Analyze emotion using DeepFace
         try:
+            print("Starting DeepFace.analyze()")
             emotion_result = DeepFace.analyze(face_roi, actions=['emotion'], enforce_detection=False)
             if isinstance(emotion_result, list):
                 emotion_result = emotion_result[0]
-            
+
             dominant_emotion = emotion_result['dominant_emotion']
             emotions = emotion_result.get('emotion', {})
             confidence = emotions.get(dominant_emotion, 0)
-            
+
+            print("DeepFace result:", dominant_emotion, confidence)
             return {
+                'success': True,
                 'emotion': dominant_emotion,
                 'confidence': round(confidence, 2),
                 'all_emotions': emotions
             }
         except Exception as e:
-            return {'emotion': 'Unknown', 'confidence': 0, 'error': str(e)}
-    
+            print("DeepFace analyze error:", e)
+            traceback.print_exc()
+            return {'success': False, 'emotion': 'Unknown', 'confidence': 0, 'error': str(e)}
     except Exception as e:
-        return {'emotion': 'Unknown', 'confidence': 0, 'error': str(e)}
+        print("Unhandled exception in detect_mood_from_image:", e)
+        traceback.print_exc()
+        return {'success': False, 'emotion': 'Unknown', 'confidence': 0, 'error': str(e)}
 
 
 def detect_mood():
