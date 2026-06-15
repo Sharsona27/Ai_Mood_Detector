@@ -3,14 +3,9 @@ from backend.mood_detector import detect_mood, detect_mood_from_image
 from backend.combined_detector import predict_combined_emotion, detect_combined_emotion_from_image
 from flask import Blueprint, send_file, render_template, request, redirect, session, flash, jsonify
 from flask import redirect,url_for
-import threading
 from werkzeug.security import generate_password_hash, check_password_hash
 from backend.db import get_connection
 from datetime import datetime
-import base64
-import cv2
-import numpy as np
-from io import BytesIO
 
 main = Blueprint('main', __name__)
 
@@ -119,25 +114,6 @@ def index():
 
 
 
-
-
-
-
-
-@main.route('/start-combined-detect')
-def start_combined_detect():
-    if 'user_id' not in session:
-        flash('Please log in to detect mood.', 'warning')
-        return redirect(url_for('main.login'))
-
-    print("👉 Mood detection started directly")
-    mood_result = predict_combined_emotion()  # no threading
-    print("✅ Mood detected:", mood_result)
-
-    flash(f"Mood detection result: {mood_result}", "success")
-    return redirect(url_for('main.index'))
-
-
 @main.route('/home')
 def home():
     if 'user_id' not in session:
@@ -215,58 +191,7 @@ def forgot_password():
     return render_template('forgot_password.html')
 
 
-# Route: Try the Demo (no login, no saving)
-@main.route('/demo-detect')
-def demo_detect():
-    detect_mood()  # This just runs and returns after window closes
-    flash('Demo complete. Thanks for trying!', 'info')
-    return redirect(url_for('main.root'))
-
-# Route: Logged-in user detection (saves to DB)
-@main.route('/detect')
-def detect():
-    if 'user_id' not in session:
-        flash('Please log in to use mood detection.', 'warning')
-        return redirect(url_for('main.root'))
-
-    def threaded_detection(user_id):
-        mood = detect_mood()
-        conn = get_connection()
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (%s, %s, %s)',
-                    (user_id, mood, datetime.now())
-                )
-            conn.commit()
-        finally:
-            conn.close()
-
-
-    # Start detection in a separate thread
-    detection_thread = threading.Thread(target=threaded_detection, args=(session['user_id'],))
-    detection_thread.start()
-
-    flash('Mood detection started. Check back after it completes.', 'info')
-    return redirect(url_for('main.index'))
-
-@main.route('/start_demo_detection')
-def start_demo_detection():
-    # Start detection in a new thread
-    detection_thread = threading.Thread(target=detect_mood)
-    detection_thread.start()
-
-    # Return a response to the user right away
-    return redirect(url_for('main.index'))  # or any page with a message
-
-
-@main.route('/start_user_detection')
-def start_user_detection():
-    detection_thread = threading.Thread(target=detect_mood)
-    detection_thread.start()
-
-    return redirect(url_for('main.index'))  # or wherever you want the user to go
-
+# Contact and Feedback Routes
 @main.route('/send_message', methods=['POST'])
 def send_message():
     name = request.form['name']
@@ -277,14 +202,15 @@ def send_message():
     return redirect(url_for('main.contact'))
 
 
-
 @main.route('/about')
 def about():
     return render_template('about.html')
 
+
 @main.route('/contact')
 def contact():
     return render_template('contact.html')
+
 
 @main.route('/feedback', methods=['GET'])
 def feedback():
