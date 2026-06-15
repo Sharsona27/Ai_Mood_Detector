@@ -185,8 +185,8 @@ def login():
 def forgot_password():
     if request.method == 'POST':
         email = request.form['email']
-        # Add logic to send reset link or show a message
-        flash('Password reset instructions have been sent to your email.')
+        # TODO: integrate email delivery for password reset link
+        flash('If the email is registered, password reset instructions have been sent.')
         return redirect(url_for('main.login'))
     return render_template('forgot_password.html')
 

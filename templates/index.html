@@ -7,19 +7,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         .camera-container {
-            max-width: 600px;
+            max-width: 620px;
             margin: 20px auto;
             text-align: center;
         }
         
         #video {
             width: 100%;
-            max-width: 500px;
-            border: 3px solid #2ecc71;
-            border-radius: 10px;
-            background: #000;
+            max-width: 520px;
+            height: 320px;
+            border: 4px solid rgba(46, 204, 113, 0.9);
+            border-radius: 28px;
+            background: linear-gradient(180deg, rgba(26, 59, 136, 0.88), rgba(44, 162, 95, 0.78)), url('{{ url_for('static', filename='images/images1.jpg') }}') center center / cover no-repeat;
             display: block;
             margin: 20px auto;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+            position: relative;
+            overflow: hidden;
         }
         
         #canvas {
@@ -27,36 +31,48 @@
         }
         
         .camera-controls {
-            margin: 20px 0;
+            margin: 24px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: nowrap;
+            gap: 14px;
         }
         
         .btn {
-            background-color: #2ecc71;
+            background: linear-gradient(135deg, #2ecc71, #16a085);
             color: white;
-            padding: 12px 30px;
-            margin: 10px 5px;
+            padding: 14px 38px;
+            margin: 0;
             border: none;
-            border-radius: 5px;
+            border-radius: 999px;
             cursor: pointer;
             font-size: 16px;
-            transition: background-color 0.3s ease;
+            font-weight: 600;
+            min-width: 160px;
+            box-shadow: 0 14px 28px rgba(46, 204, 113, 0.28);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
         }
         
-        .btn:hover {
-            background-color: #27ae60;
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 34px rgba(46, 204, 113, 0.32);
         }
         
         .btn:disabled {
             background-color: #95a5a6;
+            box-shadow: none;
             cursor: not-allowed;
+            opacity: 0.72;
         }
         
         .btn-secondary {
-            background-color: #3498db;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            box-shadow: 0 14px 28px rgba(52, 152, 219, 0.24);
         }
         
-        .btn-secondary:hover {
-            background-color: #2980b9;
+        .btn-secondary:hover:not(:disabled) {
+            box-shadow: 0 18px 34px rgba(52, 152, 219, 0.3);
         }
         
         .result-box {
@@ -152,6 +168,9 @@
     <div class="main-content">
         <div class="center-content">
             <h1>Welcome to <span class="highlight">AI Mood Detector</span></h1>
+            {% if session.get('username') %}
+                <p class="logged-in-text">Logged in as <strong>{{ session.username }}</strong></p>
+            {% endif %}
             
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -164,7 +183,7 @@
             
             <!-- Camera Container -->
             <div class="camera-container">
-                <p class="camera-label">📹 Enable your camera and capture your face to decode your mood</p>
+                <p class="camera-label">Enable your camera and capture your face to decode your mood</p>
                 <video id="video" autoplay playsinline></video>
                 <canvas id="canvas"></canvas>
                 

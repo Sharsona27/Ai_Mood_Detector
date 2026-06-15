@@ -93,7 +93,13 @@ body, html {
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(46, 204, 113, 0.22);
+    box-shadow: 0 0 30px rgba(46, 204, 113, 0.25);
+    backdrop-filter: blur(16px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .logo {
@@ -139,6 +145,22 @@ body, html {
     margin-bottom: 1rem;
 }
 
+.animated-title {
+    background: linear-gradient(90deg, #f8c63a, #ee6b8a, #6a5dfc, #16d9e3, #3be881);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGlow 8s ease infinite;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+@keyframes titleGlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 .hero p {
     font-size: 1.2rem;
     margin-bottom: 2rem;
@@ -147,34 +169,46 @@ body, html {
 .hero button {
     padding: 20px 30px;
     font-size: 1.5rem;
-    background-color: #007bff;
+    background: linear-gradient(135deg, #5f8cff, #3bd5ff);
     border: none;
     color: white;
-    border-radius: 5px;
+    border-radius: 999px;
     cursor: pointer;
+    box-shadow: 0 18px 40px rgba(0, 123, 255, 0.22);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 48px rgba(0, 123, 255, 0.28);
 }
 
 .home-buttons .btn {
-    padding: 10px 25px;
+    padding: 12px 30px;
     font-size: 1rem;
-    background: transparent;
-    border: 2px solid #00bfff;
-    color: #00bfff;
-    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(59, 209, 255, 0.95), rgba(45, 130, 255, 0.95));
+    border: none;
+    color: #f0f8ff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    border-radius: 999px;
     cursor: pointer;
-    transition: background 0.3s, color 0.3s;
+    box-shadow: 0 14px 30px rgba(36, 122, 255, 0.22);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .home-buttons .btn:hover {
-    background: #00bfff;
-    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 18px 36px rgba(36, 122, 255, 0.28);
+    opacity: 0.96;
 }
 
 .home-buttons {
-    margin-top: 20px;
+    margin-top: 24px;
     display: flex;
     justify-content: center;
-    gap: 15px; /* spacing between buttons */
+    gap: 18px; /* spacing between buttons */
 }
 
 .side-menu {
@@ -210,20 +244,24 @@ body, html {
 }
 
 .demo-button {
-    padding: 10px 25px;
+    padding: 14px 32px;
     font-size: 1rem;
-    background: transparent;
-    border: 2px solid #00bfff;
-    color: #00bfff;
-    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(59, 209, 255, 0.95), rgba(45, 130, 255, 0.95));
+    border: none;
+    color: #f6fdff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    border-radius: 999px;
     cursor: pointer;
-    transition: background 0.3s, color 0.3s;
+    box-shadow: 0 16px 36px rgba(36, 122, 255, 0.22);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     margin-bottom: 15px; /* spacing below the demo button */
 }
 
 .demo-button:hover {
-    background: #00bfff;
-    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 20px 44px rgba(36, 122, 255, 0.28);
 }
 
 
