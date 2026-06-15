@@ -5,6 +5,10 @@ from keras.models import load_model
 from keras.preprocessing.image import img_to_array
 from collections import Counter
 from deepface import DeepFace
+import base64
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # Load your custom-trained model
 custom_model = load_model("models/custom_emotion_model.h5")
@@ -14,7 +18,109 @@ custom_labels = ['bored', 'contempt', 'disgust', 'fear', 'joy', 'surprise', 'ups
 mp_face_detection = mp.solutions.face_detection
 face_detection = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
 
+
+def detect_combined_emotion_from_image(image_data):
+    """
+    Detect emotion from a single image using both custom model and DeepFace.
+    
+    Args:
+        image_data: Either numpy array (BGR format) or base64 encoded string
+        
+    Returns:
+        dict with keys: emotion, confidence, custom_emotion, deepface_emotion
+    """
+    try:
+        # Convert base64 to numpy array if needed
+        if isinstance(image_data, str):
+            image_data = base64.b64decode(image_data)
+            image_array = np.frombuffer(image_data, dtype=np.uint8)
+            frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+        else:
+            frame = image_data
+        
+        if frame is None:
+            return {'emotion': 'Unknown', 'confidence': 0, 'error': 'Could not decode image'}
+        
+        # Convert to RGB for face detection
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = face_detection.process(rgb_frame)
+        
+        if not results.detections:
+            return {'emotion': 'Unknown', 'confidence': 0, 'error': 'No face detected'}
+        
+        # Process the first detected face
+        detection = results.detections[0]
+        bbox = detection.location_data.relative_bounding_box
+        ih, iw, _ = frame.shape
+        x = int(bbox.xmin * iw)
+        y = int(bbox.ymin * ih)
+        w = int(bbox.width * iw)
+        h = int(bbox.height * ih)
+        
+        # Ensure valid coordinates
+        x = max(0, x)
+        y = max(0, y)
+        w = min(w, iw - x)
+        h = min(h, ih - y)
+        
+        face_roi = frame[y:y+h, x:x+w]
+        
+        if face_roi.size == 0:
+            return {'emotion': 'Unknown', 'confidence': 0, 'error': 'Invalid face region'}
+        
+        custom_label = 'Unknown'
+        deep_label = 'Unknown'
+        
+        try:
+            # --- Custom Model Prediction ---
+            custom_face = cv2.resize(face_roi, (224, 224))
+            custom_face = custom_face.astype("float32") / 255.0
+            custom_face = img_to_array(custom_face)
+            custom_face = np.expand_dims(custom_face, axis=0)
+            
+            preds = custom_model.predict(custom_face, verbose=0)
+            custom_label = custom_labels[np.argmax(preds)]
+            custom_confidence = float(np.max(preds))
+        except Exception as e:
+            print(f"Custom model error: {e}")
+            custom_confidence = 0
+        
+        try:
+            # --- DeepFace Prediction ---
+            deep_result = DeepFace.analyze(face_roi, actions=['emotion'], enforce_detection=False)
+            if isinstance(deep_result, list):
+                deep_result = deep_result[0]
+            deep_label = deep_result['dominant_emotion']
+            deep_emotions = deep_result.get('emotion', {})
+            deep_confidence = deep_emotions.get(deep_label, 0)
+        except Exception as e:
+            print(f"DeepFace error: {e}")
+            deep_confidence = 0
+        
+        # --- Consensus or Fallback Logic ---
+        if custom_label.lower() == deep_label.lower():
+            final_mood = custom_label
+            confidence = max(custom_confidence, deep_confidence)
+        else:
+            # Soft merge both predictions
+            final_mood = f"{custom_label} / {deep_label}"
+            confidence = (custom_confidence + deep_confidence) / 2
+        
+        return {
+            'emotion': final_mood,
+            'confidence': round(confidence, 2),
+            'custom_emotion': custom_label,
+            'custom_confidence': round(custom_confidence, 2),
+            'deepface_emotion': deep_label,
+            'deepface_confidence': round(deep_confidence, 2)
+        }
+    
+    except Exception as e:
+        return {'emotion': 'Unknown', 'confidence': 0, 'error': str(e)}
+
+
 def predict_combined_emotion():
+    """Legacy function for local webcam (if still needed for demo)."""
     cap = cv2.VideoCapture(0)
     custom_emotion_history = []
     deepface_emotion_history = []

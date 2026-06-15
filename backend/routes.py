@@ -1,15 +1,103 @@
-from backend.mood_detector import detect_mood
+from backend.mood_detector import detect_mood, detect_mood_from_image
 
-from backend.combined_detector import predict_combined_emotion
-from flask import Blueprint, send_file, render_template, request, redirect, session, flash
+from backend.combined_detector import predict_combined_emotion, detect_combined_emotion_from_image
+from flask import Blueprint, send_file, render_template, request, redirect, session, flash, jsonify
 from flask import redirect,url_for
 import threading
 from werkzeug.security import generate_password_hash, check_password_hash
 from backend.db import get_connection
 from datetime import datetime
+import base64
+import cv2
+import numpy as np
+from io import BytesIO
 
 main = Blueprint('main', __name__)
 
+
+# ============= NEW API ENDPOINTS FOR BROWSER CAMERA =============
+
+@main.route('/api/detect-mood', methods=['POST'])
+def api_detect_mood():
+    """
+    API endpoint to detect mood from a single image.
+    Expects JSON with 'image' key containing base64 encoded image data.
+    """
+    if 'user_id' not in session:
+        return jsonify({'error': 'User not authenticated'}), 401
+    
+    try:
+        data = request.get_json()
+        if not data or 'image' not in data:
+            return jsonify({'error': 'No image data provided'}), 400
+        
+        image_data = data['image']
+        
+        # Detect mood from image
+        result = detect_mood_from_image(image_data)
+        
+        # Save to database if mood was detected successfully
+        if result.get('emotion') != 'Unknown':
+            conn = get_connection()
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (%s, %s, %s)',
+                        (session['user_id'], result['emotion'], datetime.now())
+                    )
+                conn.commit()
+            except Exception as e:
+                print(f"Database error: {e}")
+            finally:
+                conn.close()
+        
+        return jsonify(result), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e), 'emotion': 'Unknown'}), 500
+
+
+@main.route('/api/detect-combined-emotion', methods=['POST'])
+def api_detect_combined_emotion():
+    """
+    API endpoint to detect emotion using both custom model and DeepFace.
+    Expects JSON with 'image' key containing base64 encoded image data.
+    """
+    if 'user_id' not in session:
+        return jsonify({'error': 'User not authenticated'}), 401
+    
+    try:
+        data = request.get_json()
+        if not data or 'image' not in data:
+            return jsonify({'error': 'No image data provided'}), 400
+        
+        image_data = data['image']
+        
+        # Detect combined emotion from image
+        result = detect_combined_emotion_from_image(image_data)
+        
+        # Save to database if emotion was detected successfully
+        if result.get('emotion') != 'Unknown':
+            conn = get_connection()
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (%s, %s, %s)',
+                        (session['user_id'], result['emotion'], datetime.now())
+                    )
+                conn.commit()
+            except Exception as e:
+                print(f"Database error: {e}")
+            finally:
+                conn.close()
+        
+        return jsonify(result), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e), 'emotion': 'Unknown'}), 500
+
+
+# ============= EXISTING ROUTES =============
 
 @main.route('/')
 def root():
