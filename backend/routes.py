@@ -35,11 +35,11 @@ def api_detect_mood():
         if result.get('emotion') != 'Unknown':
             conn = get_connection()
             try:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (%s, %s, %s)',
-                        (session['user_id'], result['emotion'], datetime.now())
-                    )
+                cursor = conn.cursor()
+                cursor.execute(
+                    'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (?, ?, ?)',
+                    (session['user_id'], result['emotion'], datetime.now())
+                )
                 conn.commit()
             except Exception as e:
                 print(f"Database error: {e}")
@@ -75,11 +75,11 @@ def api_detect_combined_emotion():
         if result.get('emotion') != 'Unknown':
             conn = get_connection()
             try:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (%s, %s, %s)',
-                        (session['user_id'], result['emotion'], datetime.now())
-                    )
+                cursor = conn.cursor()
+                cursor.execute(
+                    'INSERT INTO mood_history (user_id, mood, timestamp) VALUES (?, ?, ?)',
+                    (session['user_id'], result['emotion'], datetime.now())
+                )
                 conn.commit()
             except Exception as e:
                 print(f"Database error: {e}")
@@ -138,12 +138,12 @@ def register():
         else:
             conn = get_connection()
             try:
-                with conn.cursor() as cursor:
-                    hashed_pw = generate_password_hash(password)
-                    cursor.execute(
-                        'INSERT INTO users (username, email, password) VALUES (%s, %s, %s)',
-                        (username, email, hashed_pw)
-                    )
+                cursor = conn.cursor()
+                hashed_pw = generate_password_hash(password)
+                cursor.execute(
+                    'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+                    (username, email, hashed_pw)
+                )
                 conn.commit()
                 flash('Registration successful!', 'success')
                 return redirect('/login')
@@ -163,9 +163,9 @@ def login():
 
         conn = get_connection()
         try:
-            with conn.cursor() as cursor:
-                cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
-                user = cursor.fetchone()
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
+            user = cursor.fetchone()
 
             if user and check_password_hash(user['password'], password):
                 session['user_id'] = user['id']
@@ -241,9 +241,9 @@ def user_details():
 
     conn = get_connection()
     try:
-        with conn.cursor() as cursor:
-            cursor.execute('SELECT username, email FROM users WHERE id = %s', (session['user_id'],))
-            user = cursor.fetchone()
+        cursor = conn.cursor()
+        cursor.execute('SELECT username, email FROM users WHERE id = ?', (session['user_id'],))
+        user = cursor.fetchone()
     finally:
         conn.close()
 
@@ -260,16 +260,16 @@ def change_password():
 
     conn = get_connection()
     try:
-        with conn.cursor() as cursor:
-            cursor.execute('SELECT password FROM users WHERE id = %s', (session['user_id'],))
-            user = cursor.fetchone()
-            if user and check_password_hash(user['password'], old_password):
-                hashed_new = generate_password_hash(new_password)
-                cursor.execute('UPDATE users SET password = %s WHERE id = %s', (hashed_new, session['user_id']))
-                conn.commit()
-                flash('Password changed successfully!', 'success')
-            else:
-                flash('Old password incorrect.', 'danger')
+        cursor = conn.cursor()
+        cursor.execute('SELECT password FROM users WHERE id = ?', (session['user_id'],))
+        user = cursor.fetchone()
+        if user and check_password_hash(user['password'], old_password):
+            hashed_new = generate_password_hash(new_password)
+            cursor.execute('UPDATE users SET password = ? WHERE id = ?', (hashed_new, session['user_id']))
+            conn.commit()
+            flash('Password changed successfully!', 'success')
+        else:
+            flash('Old password incorrect.', 'danger')
     finally:
         conn.close()
 
@@ -286,12 +286,12 @@ def update_profile():
 
     conn = get_connection()
     try:
-        with conn.cursor() as cursor:
-            cursor.execute('UPDATE users SET username = %s, email = %s WHERE id = %s',
-                           (new_username, new_email, session['user_id']))
-            conn.commit()
-            session['username'] = new_username
-            flash('Profile updated!', 'success')
+        cursor = conn.cursor()
+        cursor.execute('UPDATE users SET username = ?, email = ? WHERE id = ?',
+                       (new_username, new_email, session['user_id']))
+        conn.commit()
+        session['username'] = new_username
+        flash('Profile updated!', 'success')
     finally:
         conn.close()
 
@@ -310,12 +310,12 @@ def history():
 
     conn = get_connection()
     try:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                'SELECT mood, timestamp FROM mood_history WHERE user_id = %s ORDER BY timestamp DESC',
-                (session['user_id'],)
-            )
-            history = cursor.fetchall()
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT mood, timestamp FROM mood_history WHERE user_id = ? ORDER BY timestamp DESC',
+            (session['user_id'],)
+        )
+        history = cursor.fetchall()
     finally:
         conn.close()
 
