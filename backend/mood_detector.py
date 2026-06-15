@@ -6,14 +6,17 @@ import mediapipe as mp
 from deepface import DeepFace
 import os
 from collections import Counter
-from io import BytesIO
-from PIL import Image
 import base64
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-mp_face_detection = mp.solutions.face_detection
-face_detection = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
+
+def get_face_detector():
+    mp_face_detection = mp.solutions.face_detection
+    return mp_face_detection.FaceDetection(
+        model_selection=1,
+        min_detection_confidence=0.5
+    )
 
 
 def detect_mood_from_image(image_data):
@@ -40,6 +43,7 @@ def detect_mood_from_image(image_data):
         
         # Convert to RGB for face detection
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        face_detection = get_face_detector()
         results = face_detection.process(rgb_frame)
         
         if not results.detections:
@@ -104,6 +108,7 @@ def detect_mood():
             break
 
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        face_detection = get_face_detector()
         results = face_detection.process(rgb_frame)
 
         if results.detections:

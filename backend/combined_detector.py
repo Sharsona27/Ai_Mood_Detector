@@ -14,9 +14,13 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 custom_model = load_model("models/custom_emotion_model.h5")
 custom_labels = ['bored', 'contempt', 'disgust', 'fear', 'joy', 'surprise', 'upset']
 
-# Setup MediaPipe face detection
-mp_face_detection = mp.solutions.face_detection
-face_detection = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
+
+def get_face_detector():
+    mp_face_detection = mp.solutions.face_detection
+    return mp_face_detection.FaceDetection(
+        model_selection=1,
+        min_detection_confidence=0.5
+    )
 
 
 def detect_combined_emotion_from_image(image_data):
@@ -43,6 +47,7 @@ def detect_combined_emotion_from_image(image_data):
         
         # Convert to RGB for face detection
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        face_detection = get_face_detector()
         results = face_detection.process(rgb_frame)
         
         if not results.detections:
@@ -133,6 +138,7 @@ def predict_combined_emotion():
             break
 
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        face_detection = get_face_detector()
         results = face_detection.process(rgb_frame)
 
         if results.detections:
